@@ -1,0 +1,58 @@
+name: Pipeline
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Every 12 hours (00:00 and 12:00 UTC)
+    - cron: "0 */12 * * *"
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Write service account key
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          mkdir -p creds
+          printf '%s' "$GCP_SA_KEY" > creds/maneuver-marketing-test-625a0985781e.json
+
+      - name: Write dbt profiles.yml
+        run: |
+          cat > dbt/profiles.yml <<EOF
+          maneuver_marketing_test:
+            target: dev
+            outputs:
+              dev:
+                type: bigquery
+                method: service-account
+                project: maneuver-marketing-test
+                dataset: ods
+                location: US
+                threads: 1
+                priority: interactive
+                job_execution_timeout_seconds: 300
+                job_retries: 1
+                keyfile: ${{ github.workspace }}/creds/maneuver-marketing-test-625a0985781e.json
+          EOF
+
+      - name: Run pipeline
+        env:
+          DBT_PROFILES_DIR: ${{ github.workspace }}/dbt
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: python pipeline.py

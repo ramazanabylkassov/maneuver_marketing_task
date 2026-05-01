@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: raw_data
+    schema: "raw_data"
+    tables:
+      - name: orders_raw
+        identifier: orders_raw

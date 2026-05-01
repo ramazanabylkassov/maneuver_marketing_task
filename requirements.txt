@@ -1,0 +1,11 @@
+dbt-core==1.11.8
+dbt-bigquery==1.11.1
+google-cloud-bigquery==3.41.0
+google-auth==2.50.0
+google-auth-httplib2>=0.2.0
+google-api-python-client>=2.120.0
+httplib2>=0.22.0
+pandas==2.3.3
+pyarrow==24.0.0
+db-dtypes==1.5.1
+requests==2.33.1
