@@ -30,6 +30,7 @@ DASHBOARD_URL = (
     f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit"
     "?gid=121810620#gid=121810620"
 )
+SLACK_USER_ID = "U0B148FR5GC"  # paged on failure
 
 
 def run_dbt() -> None:
@@ -103,15 +104,20 @@ def format_message(
     error: Optional[str],
     started_at: datetime,
 ) -> str:
-    icon = ":white_check_mark:" if status == "OK" else ":x:"
     started_line = f":clock3: Started: {started_at.strftime('%Y-%m-%d %H:%M:%S %Z')}"
-    header = f"{icon} Pipeline {status}"
+
+    if status != "OK":
+        return (
+            f"{started_line}\n"
+            f":x: Pipeline FAILED\n"
+            f"• Error: {error}\n"
+            f"<@{SLACK_USER_ID}>"
+        )
+
     dashboard_line = f"• Dashboard: <{DASHBOARD_URL}|MAIN TAB>"
-    if not metrics:
-        return f"{started_line}\n{header}\n• Error: {error}\n{dashboard_line}"
     return (
         f"{started_line}\n"
-        f"{header}\n"
+        f":white_check_mark: Pipeline OK\n"
         f"• Orders processed: {metrics['orders_processed']} "
         f"(duplicates removed: {metrics['duplicates_removed']})\n"
         f"• Gross revenue (paid only): ${metrics['gross_revenue_usd']}\n"
@@ -136,10 +142,6 @@ def main() -> None:
     except Exception as e:
         logger.exception("Pipeline failed")
         status, error = "FAILED", str(e)
-        try:
-            metrics = collect_metrics()
-        except Exception:
-            logger.exception("Could not collect metrics on failure path")
 
     send_slack_message(message=format_message(status, metrics, error, started_at))
 

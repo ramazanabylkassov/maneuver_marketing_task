@@ -65,5 +65,5 @@ jobs:
           FAILED_STEP: ${{ github.job }}
         run: |
           curl -X POST -H 'Content-Type: application/json' \
-            --data "{\"text\":\":rotating_light: Pipeline workflow failed before pipeline.py could finish (job: ${FAILED_STEP}). <${RUN_URL}|View run> @<U0B148FR5GC>\"}" \
+            --data "{\"text\":\":rotating_light: Pipeline workflow failed before pipeline.py could finish (job: ${FAILED_STEP}). <${RUN_URL}|View run> <@U0B148FR5GC>\"}" \
             "$SLACK_WEBHOOK_URL"
