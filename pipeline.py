@@ -3,6 +3,7 @@
 import logging
 import os
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -97,13 +98,20 @@ def sync_to_sheets() -> None:
     ).load_bq_to_sheets()
 
 
-def format_message(status: str, metrics: Optional[dict], error: Optional[str]) -> str:
+def format_message(
+    status: str,
+    metrics: Optional[dict],
+    error: Optional[str],
+    started_at: datetime,
+) -> str:
     icon = ":white_check_mark:" if status == "OK" else ":x:"
+    started_line = f":clock3: Started: {started_at.strftime('%Y-%m-%d %H:%M:%S %Z')}"
     header = f"{icon} Pipeline {status}"
     dashboard_line = f"• Dashboard: <{DASHBOARD_URL}|sales_per_channel_month>"
     if not metrics:
-        return f"{header}\n• Error: {error}\n{dashboard_line}"
+        return f"{started_line}\n{header}\n• Error: {error}\n{dashboard_line}"
     return (
+        f"{started_line}\n"
         f"{header}\n"
         f"• Orders processed: {metrics['orders_processed']} "
         f"(duplicates removed: {metrics['duplicates_removed']})\n"
@@ -117,6 +125,7 @@ def format_message(status: str, metrics: Optional[dict], error: Optional[str]) -
 
 
 def main() -> None:
+    started_at = datetime.now(timezone.utc)
     metrics: Optional[dict] = None
     error: Optional[str] = None
     status = "OK"
@@ -133,7 +142,7 @@ def main() -> None:
         except Exception:
             logger.exception("Could not collect metrics on failure path")
 
-    send_slack_message(message=format_message(status, metrics, error))
+    send_slack_message(message=format_message(status, metrics, error, started_at))
 
 
 if __name__ == "__main__":

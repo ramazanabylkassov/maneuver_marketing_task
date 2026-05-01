@@ -3,8 +3,8 @@ name: Pipeline
 on:
   workflow_dispatch:
   schedule:
-    # Every 12 hours (00:00 and 12:00 UTC)
-    - cron: "0 */12 * * *"
+    # Every 3 hours (00:00, 03:00, 06:00, 09:00, 12:00, 15:00, 18:00, 21:00 UTC)
+    - cron: "0 */3 * * *"
 
 jobs:
   run:
