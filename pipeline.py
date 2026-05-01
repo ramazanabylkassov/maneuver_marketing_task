@@ -106,7 +106,7 @@ def format_message(
     icon = ":white_check_mark:" if status == "OK" else ":x:"
     started_line = f":clock3: Started: {started_at.strftime('%Y-%m-%d %H:%M:%S %Z')}"
     header = f"{icon} Pipeline {status}"
-    dashboard_line = f"• Dashboard: <{DASHBOARD_URL}|items_by_country_channel_month>"
+    dashboard_line = f"• Dashboard: <{DASHBOARD_URL}|MAIN TAB>"
     if not metrics:
         return f"{started_line}\n{header}\n• Error: {error}\n{dashboard_line}"
     return (

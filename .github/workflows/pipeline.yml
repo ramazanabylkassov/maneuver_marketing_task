@@ -56,3 +56,14 @@ jobs:
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: python pipeline.py
+
+      - name: Notify Slack on workflow failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          FAILED_STEP: ${{ github.job }}
+        run: |
+          curl -X POST -H 'Content-Type: application/json' \
+            --data "{\"text\":\":rotating_light: Pipeline workflow failed before pipeline.py could finish (job: ${FAILED_STEP}). <${RUN_URL}|View run> @<U0B148FR5GC>\"}" \
+            "$SLACK_WEBHOOK_URL"
