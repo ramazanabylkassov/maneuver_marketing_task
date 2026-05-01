@@ -5,6 +5,9 @@ with
         where 1=1
             and has_incomplete_data = False
             and qc_flagged = False
+            and financial_status in (
+                'paid'
+                )
     ),
 
     items_by_country_channel_month as (
