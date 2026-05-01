@@ -37,19 +37,19 @@ with
                     safe.parse_timestamp('%d/%m/%Y %H:%M',    created_at),  -- 20/02/2024 04:42
                     safe.parse_timestamp('%d/%m/%Y',          created_at)   -- 20/02/2024
                 )
-            )                                                as created_at,
+            )                                                              as created_at,
 
             customer_id,
-            nullif(trim(source_channel), '')                 as source_channel,
-            lower(nullif(trim(financial_status), ''))        as financial_status,
-            nullif(trim(fulfillment_status), '')             as fulfillment_status,
-            safe_cast(total_price     as numeric)            as total_price,
-            safe_cast(total_discounts as numeric)            as total_discounts,
-            safe_cast(net_revenue     as numeric)            as net_revenue,
-            upper(nullif(trim(currency), ''))                as currency,
+            nullif(trim(source_channel), '')                               as source_channel,
+            lower(nullif(trim(financial_status), ''))                      as financial_status,
+            nullif(trim(fulfillment_status), '')                           as fulfillment_status,
+            safe_cast(total_price     as numeric)                          as total_price,
+            safe_cast(total_discounts as numeric)                          as total_discounts,
+            safe_cast(net_revenue     as numeric)                          as net_revenue,
+            upper(nullif(trim(currency), ''))                              as currency,
             product_title,
-            safe_cast(quantity as int64)                     as quantity,
-            upper(nullif(trim(country_code), 'not_set'))     as country_code
+            safe_cast(quantity as int64)                                   as quantity,
+            coalesce(upper(nullif(trim(country_code), '')), 'not_set')     as country_code
 
         from deduped
     ),
