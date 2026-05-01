@@ -1,4 +1,4 @@
-"""Pipeline: refresh items_by_country_month, sync to Google Sheets, notify Slack."""
+"""Pipeline: refresh items_by_country_channel_month, sync to Google Sheets, notify Slack."""
 
 import logging
 import os
@@ -22,8 +22,7 @@ CLEAN_TABLE = f"{BQ_PROJECT}.ods.clean_data"
 
 # Maps Google Sheet tab name -> fully-qualified BigQuery table to dump into it.
 SHEETS_TO_LOAD = {
-    "items_by_country_month": f"{BQ_PROJECT}.datamarts.items_by_country_month",
-    "sales_per_channel_month": f"{BQ_PROJECT}.datamarts.sales_per_channel_country_month",
+    "items_by_country_channel_month": f"{BQ_PROJECT}.datamarts.items_by_country_channel_month",
 }
 
 SPREADSHEET_ID = os.environ.get("SPREADSHEET_ID", "186hTRRRByB5EF_vQtRWMFZM41BNupjgoIba8Vn7pf_Y")
@@ -36,7 +35,7 @@ DASHBOARD_URL = (
 def run_dbt() -> None:
     cmd = [
         "dbt", "build",
-        "--select", "+items_by_country_month", "+sales_per_channel_country_month",
+        "--select", "+items_by_country_channel_month",
         "--full-refresh",
     ]
     logger.info("Running: %s", " ".join(cmd))
@@ -107,7 +106,7 @@ def format_message(
     icon = ":white_check_mark:" if status == "OK" else ":x:"
     started_line = f":clock3: Started: {started_at.strftime('%Y-%m-%d %H:%M:%S %Z')}"
     header = f"{icon} Pipeline {status}"
-    dashboard_line = f"• Dashboard: <{DASHBOARD_URL}|sales_per_channel_month>"
+    dashboard_line = f"• Dashboard: <{DASHBOARD_URL}|items_by_country_channel_month>"
     if not metrics:
         return f"{started_line}\n{header}\n• Error: {error}\n{dashboard_line}"
     return (
