@@ -35,7 +35,7 @@ select
     quantity_per_order,
     order_count,
     quantity,
-    net_revenue_us
+    net_revenue_usd
 from items_by_country_channel_month
 
 -- dbt build --select items_by_country_channel_month --full-refresh

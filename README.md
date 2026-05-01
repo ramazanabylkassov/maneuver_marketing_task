@@ -58,7 +58,7 @@ All BigQuery objects live in the `maneuver-marketing-test` GCP project.
 
 | File | Purpose |
 |---|---|
-| `pipeline.py` | Orchestrates the run: shells out to `dbt build`, calls `BigQueryToSheets`, computes summary metrics, sends Slack message. Status is `OK` on success, `FAILED` on any exception (the message is sent either way). |
+| `pipeline.py` | Orchestrates the run: shells out to `dbt build`, calls `BigQueryToSheets`, computes summary metrics, sends Slack message. Status is `PASSED` if the run finished cleanly with `qc_anomalies == 0` and `pass_rate >= 95%`; otherwise `FAILED` (and the user is paged). On exceptions, a short error-only message is sent. |
 | `load_to_gsheet.py` | `run_bq_query()` returns a DataFrame using the local SA key. `BigQueryToSheets` authenticates with the same key and writes a DataFrame into a target sheet, in chunks, with retry. |
 | `send_slack_message.py` | One-shot POST to a Slack incoming webhook. Reads the URL from `SLACK_WEBHOOK_URL` (required). |
 | `dbt/models/.../clean_data.sql` | Cleansing layer. See [Transformation logic](#transformation-logic). |
