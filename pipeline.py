@@ -18,14 +18,26 @@ DBT_DIR = REPO_ROOT / "dbt"
 BQ_PROJECT = "maneuver-marketing-test"
 RAW_TABLE = f"{BQ_PROJECT}.raw_data.orders_raw"
 CLEAN_TABLE = f"{BQ_PROJECT}.ods.clean_data"
-MART_TABLE = f"{BQ_PROJECT}.datamarts.items_by_country_month"
+
+# Maps Google Sheet tab name -> fully-qualified BigQuery table to dump into it.
+SHEETS_TO_LOAD = {
+    "items_by_country_month": f"{BQ_PROJECT}.datamarts.items_by_country_month",
+    "sales_per_channel_month": f"{BQ_PROJECT}.datamarts.sales_per_channel_country_month",
+}
 
 SPREADSHEET_ID = os.environ.get("SPREADSHEET_ID", "186hTRRRByB5EF_vQtRWMFZM41BNupjgoIba8Vn7pf_Y")
-SHEET_TAB = "items_by_country_month"
+DASHBOARD_URL = (
+    f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit"
+    "?gid=121810620#gid=121810620"
+)
 
 
 def run_dbt() -> None:
-    cmd = ["dbt", "build", "--select", "+items_by_country_month", "--full-refresh"]
+    cmd = [
+        "dbt", "build",
+        "--select", "+items_by_country_month", "+sales_per_channel_country_month",
+        "--full-refresh",
+    ]
     logger.info("Running: %s", " ".join(cmd))
     subprocess.run(cmd, cwd=DBT_DIR, check=True)
 
@@ -79,12 +91,8 @@ def sync_to_sheets() -> None:
         client="maneuver_marketing_test",
         spreadsheet_id=SPREADSHEET_ID,
         spreadsheet_details={
-            SHEET_TAB: {
-                "query": (
-                    f"select * from `{MART_TABLE}` "
-                    "order by month, country_code, product_title"
-                )
-            }
+            tab: {"query": f"select * from `{table}` order by 1, 2, 3"}
+            for tab, table in SHEETS_TO_LOAD.items()
         },
     ).load_bq_to_sheets()
 
@@ -92,8 +100,9 @@ def sync_to_sheets() -> None:
 def format_message(status: str, metrics: Optional[dict], error: Optional[str]) -> str:
     icon = ":white_check_mark:" if status == "OK" else ":x:"
     header = f"{icon} Pipeline {status}"
+    dashboard_line = f"• Dashboard: <{DASHBOARD_URL}|sales_per_channel_month>"
     if not metrics:
-        return f"{header}\n• Error: {error}"
+        return f"{header}\n• Error: {error}\n{dashboard_line}"
     return (
         f"{header}\n"
         f"• Orders processed: {metrics['orders_processed']} "
@@ -102,7 +111,8 @@ def format_message(status: str, metrics: Optional[dict], error: Optional[str]) -
         f"• Top channel by net revenue: {metrics['top_channel']} "
         f"(${metrics['top_channel_revenue']})\n"
         f"• QC anomalies: {metrics['qc_anomalies']}\n"
-        f"• Data quality pass rate: {round(metrics['pass_rate'] * 100)}%"
+        f"• Data quality pass rate: {round(metrics['pass_rate'] * 100)}%\n"
+        f"{dashboard_line}"
     )
 
 
