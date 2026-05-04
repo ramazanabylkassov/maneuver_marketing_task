@@ -54,43 +54,43 @@ def run_dbt() -> None:
 
 def collect_metrics() -> dict:
     sql = f"""
-    with
-        raw as (
-            select count(*) as raw_count
-            from `{RAW_TABLE}`
-            where order_id is not null and trim(order_id) != ''
-        ),
-        clean as (
-            select * from `{CLEAN_TABLE}`
-        ),
-        totals as (
-            select
-                (select raw_count from raw)                              as raw_count,
-                count(*)                                                 as orders_processed,
-                countif(qc_flagged)                                      as qc_anomalies,
-                sum(if(financial_status = 'paid',
-                       total_price * to_usd_conversion_rate, 0))         as gross_revenue_usd,
-                countif(not qc_flagged and not has_incomplete_data)      as clean_count
-            from clean
-        ),
-        top_channel as (
-            select source_channel,
-                   sum(net_revenue * to_usd_conversion_rate) as net_rev_usd
-            from clean
-            where not has_incomplete_data and not qc_flagged
-            group by source_channel
-            order by net_rev_usd desc
-            limit 1
-        )
-    select
-        totals.raw_count - totals.orders_processed                            as duplicates_removed,
-        totals.orders_processed                                               as orders_processed,
-        totals.qc_anomalies                                                   as qc_anomalies,
-        round(totals.gross_revenue_usd, 1)                                    as gross_revenue_usd,
-        round(safe_divide(totals.clean_count, totals.orders_processed), 4)    as pass_rate,
-        top_channel.source_channel                                            as top_channel,
-        round(top_channel.net_rev_usd, 1)                                     as top_channel_revenue
-    from totals, top_channel
+        with
+            raw as (
+                select count(*) as raw_count
+                from `{RAW_TABLE}`
+                where order_id is not null and trim(order_id) != ''
+            ),
+            clean as (
+                select * from `{CLEAN_TABLE}`
+            ),
+            totals as (
+                select
+                    (select raw_count from raw)                              as raw_count,
+                    count(*)                                                 as orders_processed,
+                    countif(qc_flagged)                                      as qc_anomalies,
+                    sum(if(financial_status = 'paid',
+                        total_price * to_usd_conversion_rate, 0))         as gross_revenue_usd,
+                    countif(not qc_flagged and not has_incomplete_data)      as clean_count
+                from clean
+            ),
+            top_channel as (
+                select source_channel,
+                    sum(net_revenue * to_usd_conversion_rate) as net_rev_usd
+                from clean
+                where not has_incomplete_data and not qc_flagged
+                group by source_channel
+                order by net_rev_usd desc
+                limit 1
+            )
+        select
+            totals.raw_count - totals.orders_processed                            as duplicates_removed,
+            totals.orders_processed                                               as orders_processed,
+            totals.qc_anomalies                                                   as qc_anomalies,
+            round(totals.gross_revenue_usd, 1)                                    as gross_revenue_usd,
+            round(safe_divide(totals.clean_count, totals.orders_processed), 4)    as pass_rate,
+            top_channel.source_channel                                            as top_channel,
+            round(top_channel.net_rev_usd, 1)                                     as top_channel_revenue
+        from totals, top_channel
     """
     df = run_bq_query(sql, project_id=BQ_PROJECT)
     return df.iloc[0].to_dict()
@@ -159,7 +159,8 @@ def runMonitoringChecks() -> None:
     sql = f"""
     with
         raw as (
-            select count(*) as raw_count
+            select 
+                count(*) as raw_count
             from `{RAW_TABLE}`
             where order_id is not null and trim(order_id) != ''
         ),
@@ -172,7 +173,8 @@ def runMonitoringChecks() -> None:
             group by d
         ),
         today_block as (
-            select count(distinct order_id) as today_count
+            select 
+                count(distinct order_id) as today_count
             from clean
             where date(created_at) = current_date()
         ),
